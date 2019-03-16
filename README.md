@@ -42,6 +42,9 @@ See `maxcover --help`
     The rest of the output are the optimal solutions. Each line is a list of k indices.
     The indices determine which sets to choose.
 
+If you interrupt the calculation (CTRL+C) then the so-far-best solution(s) are printed, which is not the guaranteed maximum.
+But later you can continue the search (see parallelization).
+
 ## algorithm
 Simply looks all the *n*-choose-*k* possibilities, where _k_ is the number of sets to choose and _n_ is the number of the sets to choose from (lines of input).
 
@@ -51,3 +54,52 @@ But those limitations can be easily expanded.
 The number of sets (_n_) is not limited compile time.
 
 ### parallelization
+The parallelization is done in the least fancy way possible, however quite effective.
+
+For example you have 10 sets and _k=5_ and you want to work on 8 threads.
+The total 10-choose-5 = 252  possibilities can be split into 8 subsets.
+For each subset of combinations you can calculate the maximum solutions, in parallel.
+The final solution is the maximum of those 8 sub-solutions.
+
+Since the combinations can be ordered lexicographically, one can represent a subset of combinations with an interval-like notation.
+For example:
+
+    "0 1 2 3 4" - "0 1 3 8 9"
+    "0 1 3 8 9" - "0 2 3 4 7"
+    "0 2 3 4 7" - "0 2 5 6 8"
+    "0 2 5 6 8" - "0 3 4 5 6"
+    "0 3 4 5 6" - "0 3 4 5 7"
+    "0 3 4 5 7" - "2 3 4 8 9"
+    "2 3 4 8 9" - "2 5 7 8 9"
+    "2 5 7 8 9" - 
+   
+The last valid combination in this example is `"5 6 7 8 9"`.
+In the example the size of the splits are quite uneven (the right end of the interval is exclusive):
+
+    "0 1 2 3 4" - "0 1 3 8 9" ->  35
+    "0 1 3 8 9" - "0 2 3 4 7" ->  23
+    "0 2 3 4 7" - "0 2 5 6 8" ->  24
+    "0 2 5 6 8" - "0 3 4 5 6" ->   9
+    "0 3 4 5 6" - "0 3 4 5 7" ->   1
+    "0 3 4 5 7" - "2 3 4 8 9" -> 113
+    "2 3 4 8 9" - "2 5 7 8 9" ->  24
+    "2 5 7 8 9" -             ->  23
+    -------------------------------
+    "0 1 2 3 4" -             -> 252
+
+So in this case the subtask `"0 3 4 5 7" - "2 3 4 8 9"` is the bottleneck.
+
+Nonetheless, if you choose these intervals then you can break down the search into subtasks, which can be calculated separately and remotely.
+
+So in parallelization there are two key components:
+* break down the search space into intervals, like in the example
+* compute all those using [parallel](https://www.gnu.org/software/parallel/)
+
+Finally, find the maximum among the sub tasks (with a bash script or such).
+
+You can generate random splits with `generate_boundaries.py` in the example:
+
+    python generate_boundaries.py 10 5 8
+
+You can specify the search interval of `maxcover` with `--begin` and `--end` (see `--help`).
+See `one.sh` and `exp.sh` for example.
