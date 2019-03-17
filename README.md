@@ -35,9 +35,9 @@ See `maxcover --help`
             maxcover -k 2 < test/01.txt
     Output:
             4/6
-            0 1
-            0 2
-            1 2
+            0	1
+            0	2
+            1	2
     The first line of the output is the maximum coverage per the size of the union of the sets.
     The rest of the output are the optimal solutions. Each line is a list of k indices.
     The indices determine which sets to choose.
@@ -89,17 +89,22 @@ In the example the size of the splits are quite uneven (the right end of the int
 
 So in this case the subtask `"0 3 4 5 7" - "2 3 4 8 9"` is the bottleneck.
 Nonetheless, if you choose these intervals then you can break down the search into subtasks, which can be calculated separately and remotely.
-As you can see, the effectiveness of the parallelization relies on the evenly split subtasks.
+As you can see, the effectiveness of the parallelization relies on the **evenly split subtasks**.
 
-So in parallelization there are two key components:
-* break down the search space into intervals, like in the example
-* compute all those using [parallel](https://www.gnu.org/software/parallel/)
+A more even split would be:
 
-Finally, find the maximum among the sub-tasks (with a bash script or such).
+    "0 1 2 3 4" - "0 1 6 7 8" -> 52
+    "0 1 6 7 8" - "0 2 6 7 8" -> 35
+    "0 2 6 7 8" - "0 6 7 8 9" -> 38
+    "0 6 7 8 9" - "1 3 6 7 8" -> 52
+    "1 3 6 7 8" - "1 6 7 8 9" -> 18
+    "1 6 7 8 9" - "2 3 6 7 8" -> 17
+    "2 3 6 7 8" - "2 6 7 8 9" -> 18
+    "2 6 7 8 9" -             -> 22
 
-You can generate fairly even splits with `generate_boundaries.py` in the example:
+The pseudo-code for parallelization:
+1. break down the search space into intervals (use `generate_boundaries.py`)
+1. compute all those using `test.sh`
+1. find the maximum among the sub-tasks (with `post_process.sh`).
 
-    python generate_boundaries.py 10 5 8
-
-You can specify the search interval of `maxcover` with `--begin` and `--end` (see `--help`).
 See `exp.sh` for example.
