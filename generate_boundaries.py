@@ -1,6 +1,6 @@
 from __future__ import print_function
-import numpy
 import sys
+import numpy
 
 def nchoosek(n, k):
     result = 1
@@ -10,16 +10,36 @@ def nchoosek(n, k):
         result /= i
     return result
     
-n, k, t = map(int, sys.argv[1:4])
+def search(x, goal, n, k):
+          #0  0    10  1
+    assert(0 <=k and k <=n)
+    s = 0
+    # if goal >= nchoosek(n, k):
+        # return tuple(range(x, x+k-1)) + (x+k,)
+    if k > 0:
+        while x <= n-k:
+            new_sum = s + nchoosek(n-x-1,k-1)
+            if new_sum > goal:
+                return (x,) + search(x+1, goal-s, n-1, k-1)
+            else:
+                s = new_sum
+                x += 1
 
-boundaries = set()
-boundaries.add(tuple(range(k)))
-boundaries.add(tuple(range(n-k, n-1)) + (n,))
+    return tuple(range(x, x+k))
 
-if t <= nchoosek(n, k):
-    while len(boundaries) <= t:
-        boundaries.add(tuple(sorted(numpy.random.choice(range(n), size=k, replace=False))))
+def str_subset(x):
+    return ' '.join(map(str, x))
+    
+if __name__ == "__main__":
+    n, k, t = map(int, sys.argv[1:4])
 
-for b in sorted(boundaries):
-        print(' '.join(map(str, b)))
+    print(str_subset(range(k)))
 
+    N = nchoosek(n, k)
+
+    x = 0
+    s = 0
+    for goal in numpy.arange(float(N)/t, N, float(N)/t):
+        print(str_subset(search(0, goal, n, k)))
+
+    print(str_subset(tuple(range(n-k,n-1)) + (n,)))
