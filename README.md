@@ -88,18 +88,18 @@ In the example the size of the splits are quite uneven (the right end of the int
     "0 1 2 3 4" -             -> 252
 
 So in this case the subtask `"0 3 4 5 7" - "2 3 4 8 9"` is the bottleneck.
-
 Nonetheless, if you choose these intervals then you can break down the search into subtasks, which can be calculated separately and remotely.
+As you can see, the effectiveness of the parallelization relies on the evenly split subtasks.
 
 So in parallelization there are two key components:
 * break down the search space into intervals, like in the example
 * compute all those using [parallel](https://www.gnu.org/software/parallel/)
 
-Finally, find the maximum among the sub tasks (with a bash script or such).
+Finally, find the maximum among the sub-tasks (with a bash script or such).
 
-You can generate random splits with `generate_boundaries.py` in the example:
+You can generate fairly even splits with `generate_boundaries.py` in the example:
 
     python generate_boundaries.py 10 5 8
 
 You can specify the search interval of `maxcover` with `--begin` and `--end` (see `--help`).
-See `one.sh` and `exp.sh` for example.
+See `exp.sh` for example.
